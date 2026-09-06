@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign Agreement | PV Talent Partners</title><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar"><div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Secure Agreement Signing</small></div></div></header>
+<main class="container narrow">
+<section class="hero compact"><div><p class="eyebrow">SECURE SIGNING</p><h1 id="heading">Agreement</h1><p>Review the agreement details before continuing to electronic signing.</p></div></section>
+<section class="card">
+ <div id="notice" class="notice"></div>
+ <div class="details" id="details"></div>
+ <div class="signbox">
+   <div><span class="eyebrow">SIGNING PARTY</span><h2 id="partyName">—</h2><p id="partyText"></p></div>
+   <button id="signBtn" class="primary" onclick="startSign()">Sign with eSign</button>
+ </div>
+ <div class="demo-warning">Local prototype: the “Demo Sign” action only tests the status workflow. It is not Aadhaar authentication and must not be used in production.</div>
+ <button id="demoBtn" class="ghost fullbtn" onclick="demoSign()">Demo Sign (Local Test)</button>
+</section>
+</main>
+<script src="/sign.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PV Talent Partners | Agreement Portal</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Agreement & eSign Portal</small></div></div>
+  <span class="pill">Consultancy Portal</span>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Candidate Placement Agreements</h1><p>Create an agreement, send a secure signing link, and track both signatures in one place.</p></div>
+    <button class="primary" onclick="openCreate()">+ New Agreement</button>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><span>Total</span><strong id="total">0</strong></div>
+    <div class="stat"><span>Awaiting Candidate</span><strong id="awaiting">0</strong></div>
+    <div class="stat"><span>Awaiting Consultant</span><strong id="consultAwaiting">0</strong></div>
+    <div class="stat"><span>Fully Signed</span><strong id="complete">0</strong></div>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><div><h2>Agreements</h2><p>Live status from your backend.</p></div><button class="ghost" onclick="loadAgreements()">Refresh</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Agreement</th><th>Candidate</th><th>Fee</th><th>Candidate</th><th>Consultant</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden">
+ <div class="modal-card">
+  <div class="section-head"><div><h2>Create Agreement</h2><p>Fields correspond to your uploaded Candidate Placement Services Agreement.</p></div><button class="close" onclick="closeCreate()">×</button></div>
+  <form id="createForm" class="grid">
+    <label>Candidate full name<input name="candidateFullName" required></label>
+    <label>Execution date<input name="executionDate" type="date" required></label>
+    <label class="full">Candidate address<textarea name="candidateAddress"></textarea></label>
+    <label>ID proof type<input name="candidateIdProofType" placeholder="Aadhaar / PAN / other"></label>
+    <label>ID proof reference<input name="candidateIdProofReference" placeholder="Provider reference preferred; avoid storing Aadhaar number"></label>
+    <label>Email<input name="candidateEmail" type="email" required></label>
+    <label>Mobile<input name="candidateMobile" required></label>
+    <label>Total fee<input name="totalFeeAmount" placeholder="₹ 1,00,000" required></label>
+    <label>Pre-payment<input name="prePaymentAmount" placeholder="₹ 30,000" required></label>
+    <label>Balance amount<input name="balanceAmount" placeholder="₹ 70,000" required></label>
+    <div class="full actions"><button type="button" class="ghost" onclick="closeCreate()">Cancel</button><button class="primary">Create Agreement</button></div>
+  </form>
+ </div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
