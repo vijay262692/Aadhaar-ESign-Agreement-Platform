@@ -127,15 +127,12 @@ public class AgreementService {
     }
 
     /**
-     * Hides an agreement from the consultant dashboard without deleting the actual agreement.
-     * Client/consultant signing links remain valid, so an in-progress signing flow is not broken.
+     * Removes an agreement only from the consultant dashboard.
+     * The agreement, PDF, and signing links remain stored and usable.
      */
     @Transactional
     public void deleteForConsultant(UUID id) {
         Agreement a = get(id);
-        if (a.isFullySigned()) {
-            throw new IllegalArgumentException("A fully signed agreement cannot be removed from the consultant dashboard.");
-        }
         a.setConsultantDeleted(true);
         repo.save(a);
     }
