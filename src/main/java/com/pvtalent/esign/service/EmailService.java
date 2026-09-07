@@ -41,6 +41,9 @@ public class EmailService {
     @Value("${app.brevo-api-key:}")
     private String brevoApiKey;
 
+    @Value("${app.brevo-from-name:PV Talent Partners}")
+    private String brevoFromName;
+
     public EmailService(ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.mailSenderProvider = mailSenderProvider;
     }
@@ -117,7 +120,7 @@ public class EmailService {
             headers.set("api-key", brevoApiKey);
 
             Map<String, Object> sender = new LinkedHashMap<>();
-            sender.put("name", "PV Talent Partners");
+            sender.put("name", brevoFromName);
             sender.put("email", mailFrom);
 
             Map<String, Object> recipient = new LinkedHashMap<>();
