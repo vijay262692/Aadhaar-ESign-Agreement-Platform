@@ -1,5 +1,6 @@
 package com.pvtalent.esign.dto;
 
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
 public class CreateAgreementRequest {
@@ -11,8 +12,9 @@ public class CreateAgreementRequest {
     @NotBlank private String prePaymentAmount;
     @NotBlank private String balanceAmount;
     @NotBlank private String executionDate;
-    @NotBlank private String candidateEmail;
+    @NotBlank @Email private String candidateEmail;
     @NotBlank private String candidateMobile;
+    @Email private String consultantEmail;
 
     public String getCandidateFullName(){return candidateFullName;}
     public void setCandidateFullName(String v){candidateFullName=v;}
@@ -34,4 +36,6 @@ public class CreateAgreementRequest {
     public void setCandidateEmail(String v){candidateEmail=v;}
     public String getCandidateMobile(){return candidateMobile;}
     public void setCandidateMobile(String v){candidateMobile=v;}
+    public String getConsultantEmail(){return consultantEmail;}
+    public void setConsultantEmail(String v){consultantEmail=v;}
 }
