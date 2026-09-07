@@ -14,7 +14,7 @@
 
 <main class="container">
   <section class="hero">
-    <div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Candidate Placement Agreements</h1><p>Create an agreement, send it to the client by email, and track the two-party signing process.</p></div>
+    <div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Candidate Placement Agreements</h1><p>Create an agreement, upload the final PDF, send it to the client, and track the two-party signing process.</p></div>
     <button class="primary" onclick="openCreate()">+ New Agreement</button>
   </section>
 
@@ -33,7 +33,7 @@
 
 <div id="modal" class="modal hidden">
  <div class="modal-card">
-  <div class="section-head"><div><h2>Create Agreement</h2><p>The client receives the secure signing link by email after creation.</p></div><button class="close" onclick="closeCreate()">×</button></div>
+  <div class="section-head"><div><h2>Create Agreement</h2><p>Upload the final agreement PDF first. The client will only be emailed after the PDF is successfully uploaded.</p></div><button class="close" onclick="closeCreate()">×</button></div>
   <form id="createForm" class="grid">
     <label>Client full name<input name="candidateFullName" required></label>
     <label>Execution date<input name="executionDate" type="date" required></label>
@@ -46,7 +46,8 @@
     <label>Total fee<input name="totalFeeAmount" placeholder="₹ 1,00,000" required></label>
     <label>Pre-payment<input name="prePaymentAmount" placeholder="₹ 30,000" required></label>
     <label>Balance amount<input name="balanceAmount" placeholder="₹ 70,000" required></label>
-    <div class="full actions"><button type="button" class="ghost" onclick="closeCreate()">Cancel</button><button class="primary">Create & Email Agreement</button></div>
+    <label class="full">Final Agreement PDF<input id="agreementPdf" name="agreementPdf" type="file" accept="application/pdf,.pdf" required><small class="field-help">PDF is required so the client can download/view the exact document and review it before eSign. DOC/DOCX files must be converted to PDF first.</small></label>
+    <div class="full actions"><button type="button" class="ghost" onclick="closeCreate()">Cancel</button><button class="primary">Create, Upload & Email</button></div>
   </form>
  </div>
 </div>
