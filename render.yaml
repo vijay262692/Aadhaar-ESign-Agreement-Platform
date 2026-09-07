@@ -46,6 +46,14 @@ services:
         sync: false
       - key: APP_UPLOAD_DIR
         value: "./uploads"
+      - key: EMAIL_PROVIDER
+        value: "BREVO"
+      - key: BREVO_API_URL
+        value: "https://api.brevo.com/v3/smtp/email"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        value: "pvtalentpartners@gmail.com"
       - key: MAIL_HOST
         value: "smtp.gmail.com"
       - key: MAIL_PORT
@@ -54,8 +62,6 @@ services:
         value: "pvtalentpartners@gmail.com"
       - key: MAIL_PASSWORD
         sync: false
-      - key: MAIL_FROM
-        value: "pvtalentpartners@gmail.com"
       - key: MAIL_SMTP_AUTH
         value: "true"
       - key: MAIL_SMTP_STARTTLS
