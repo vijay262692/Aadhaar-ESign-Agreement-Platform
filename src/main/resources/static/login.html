@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PV Talent Partners | Consultant Login</title>
+<link rel="stylesheet" href="/login.css">
+</head>
+<body>
+<main class="login-shell">
+  <section class="login-card">
+    <div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Agreement & eSign Portal</small></div></div>
+    <div class="heading"><p class="eyebrow">CONSULTANT ACCESS</p><h1>Sign in</h1><p>Secure access to your consultancy agreement dashboard.</p></div>
+    <div id="message" class="message hidden"></div>
+    <form method="post" action="/login">
+      <label>Username<input name="username" autocomplete="username" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Sign in securely</button>
+    </form>
+    <p class="security">🔒 Consultant dashboard and agreement management are protected by server-side authentication.</p>
+  </section>
+</main>
+<script src="/login.js"></script>
+</body>
+</html>
