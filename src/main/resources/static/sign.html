@@ -2,20 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sign Agreement | PV Talent Partners</title><link rel="stylesheet" href="/styles.css">
+<title>Aadhaar OTP eSign | PV Talent Partners</title>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 <header class="topbar"><div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Secure Agreement Signing</small></div></div></header>
 <main class="container narrow">
-<section class="hero compact"><div><p class="eyebrow">SECURE SIGNING</p><h1 id="heading">Agreement</h1><p>Review the agreement details before continuing to electronic signing.</p></div></section>
+<section class="hero compact"><div><p class="eyebrow">SECURE DIGITAL SIGNING</p><h1 id="heading">Agreement</h1><p>Review the agreement and complete Aadhaar OTP based electronic signing.</p></div></section>
 <section class="card">
  <div id="notice" class="notice"></div>
+ <div class="section-title"><h2>Agreement Details</h2><p>Verify the details before signing.</p></div>
  <div class="details" id="details"></div>
- <div class="signbox">
-   <div><span class="eyebrow">SIGNING PARTY</span><h2 id="partyName">—</h2><p id="partyText"></p></div>
-   <button id="signBtn" class="primary" onclick="startSign()">Sign with eSign</button>
+ <div class="section-title pdf-title"><h2>Agreement Document</h2><p>Please read the complete agreement before signing.</p></div>
+ <div class="pdf-box"><iframe id="pdfViewer" title="Agreement PDF"></iframe></div>
+ <div class="section-title"><h2>Optional Identity Information</h2><p>This information is for identity/document reference only. It is <strong>not</strong> your electronic signature.</p></div>
+ <div class="grid">
+  <label>ID Proof Type<select id="idProofType"><option value="">Select ID type</option><option value="PAN">PAN</option><option value="PASSPORT">Passport</option><option value="DRIVING_LICENSE">Driving Licence</option><option value="VOTER_ID">Voter ID</option><option value="OTHER">Other</option></select></label>
+  <label>ID Reference<input id="idProofNumber" type="text" placeholder="Optional reference" autocomplete="off"></label>
  </div>
- <div class="demo-warning">Local prototype: the “Demo Sign” action only tests the status workflow. It is not Aadhaar authentication and must not be used in production.</div>
+ <div class="consent-box"><label class="checkbox-row"><input id="consent" type="checkbox"><span>I have reviewed the agreement and confirm that the information provided is correct. I consent to electronic signing of this agreement through the authorised eSign service.</span></label></div>
+ <div class="signbox">
+  <div><span class="eyebrow">SIGNING PARTY</span><h2 id="partyName">—</h2><p id="partyText"></p></div>
+  <button id="signBtn" class="primary" onclick="startSign()">🔐 Continue with Aadhaar OTP eSign</button>
+ </div>
+ <div id="signStatus" class="sign-status"></div>
+ <div class="security-note"><strong>🔒 Secure eSign</strong><p>Aadhaar OTP authentication and the digital signature are performed through an authorised eSign service provider. PV Talent Partners does not use PAN or another ID document as a substitute for the electronic signature.</p></div>
+ <div class="demo-warning"><strong>Developer testing only</strong><p>The Demo Sign option is available only for local development testing. It is not Aadhaar authentication and must not be used for production agreements.</p></div>
  <button id="demoBtn" class="ghost fullbtn" onclick="demoSign()">Demo Sign (Local Test)</button>
 </section>
 </main>
