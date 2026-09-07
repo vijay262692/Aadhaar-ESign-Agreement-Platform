@@ -5,23 +5,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.mail.internet.MimeMessage;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${app.frontend-base-url:http://localhost:8080}")
     private String frontendBaseUrl;
 
     @Value("${app.mail-from:}")
     private String mailFrom;
+
+    @Value("${app.email-provider:BREVO}")
+    private String emailProvider;
+
+    @Value("${app.brevo-api-url:https://api.brevo.com/v3/smtp/email}")
+    private String brevoApiUrl;
+
+    @Value("${app.brevo-api-key:}")
+    private String brevoApiKey;
 
     public EmailService(ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.mailSenderProvider = mailSenderProvider;
@@ -75,9 +93,64 @@ public class EmailService {
             return false;
         }
 
+        if ("BREVO".equalsIgnoreCase(emailProvider)) {
+            return sendViaBrevo(to, subject, html);
+        }
+
+        return sendViaSmtp(to, subject, html);
+    }
+
+    private boolean sendViaBrevo(String to, String subject, String html) {
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
+            log.warn("Brevo email is not configured. Set BREVO_API_KEY on the deployment.");
+            return false;
+        }
+        if (mailFrom == null || mailFrom.isBlank()) {
+            log.warn("Email sender is not configured. Set MAIL_FROM on the deployment.");
+            return false;
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            headers.set("api-key", brevoApiKey);
+
+            Map<String, Object> sender = new LinkedHashMap<>();
+            sender.put("name", "PV Talent Partners");
+            sender.put("email", mailFrom);
+
+            Map<String, Object> recipient = new LinkedHashMap<>();
+            recipient.put("email", to);
+
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("sender", sender);
+            payload.put("to", List.of(recipient));
+            payload.put("subject", subject);
+            payload.put("htmlContent", html);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    brevoApiUrl,
+                    new HttpEntity<>(payload, headers),
+                    String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Agreement email sent to {} via Brevo", to);
+                return true;
+            }
+
+            log.error("Brevo email failed for {} with status {}", to, response.getStatusCodeValue());
+            return false;
+        } catch (Exception ex) {
+            log.error("Unable to send agreement email to {} via Brevo", to, ex);
+            return false;
+        }
+    }
+
+    private boolean sendViaSmtp(String to, String subject, String html) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.warn("Email is not configured. Set MAIL_HOST/MAIL_USERNAME/MAIL_PASSWORD on the deployment.");
+            log.warn("SMTP email is not configured.");
             return false;
         }
 
@@ -89,10 +162,10 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-            log.info("Agreement email sent to {}", to);
+            log.info("Agreement email sent to {} via SMTP", to);
             return true;
         } catch (Exception ex) {
-            log.error("Unable to send agreement email to {}", to, ex);
+            log.error("Unable to send agreement email to {} via SMTP", to, ex);
             return false;
         }
     }
