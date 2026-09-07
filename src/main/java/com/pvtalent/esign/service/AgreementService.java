@@ -3,7 +3,6 @@ package com.pvtalent.esign.service;
 import com.pvtalent.esign.dto.CallbackRequest;
 import com.pvtalent.esign.dto.CreateAgreementRequest;
 import com.pvtalent.esign.dto.ESignStartRequest;
-import com.pvtalent.esign.dto.SignRequest;
 import com.pvtalent.esign.model.*;
 import com.pvtalent.esign.repository.AgreementRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +17,7 @@ import java.util.*;
 public class AgreementService {
     private final AgreementRepository repo;
     private final ESignService eSignService;
+    private final EmailService emailService;
 
     @Value("${app.frontend-base-url:http://localhost:8080}")
     private String frontendBaseUrl;
@@ -25,9 +25,10 @@ public class AgreementService {
     @Value("${app.upload-dir:./uploads}")
     private String uploadDir;
 
-    public AgreementService(AgreementRepository repo, ESignService eSignService) {
+    public AgreementService(AgreementRepository repo, ESignService eSignService, EmailService emailService) {
         this.repo = repo;
         this.eSignService = eSignService;
+        this.emailService = emailService;
     }
 
     public List<Agreement> all() { return repo.findAll(); }
@@ -57,10 +58,14 @@ public class AgreementService {
         a.setExecutionDate(r.getExecutionDate());
         a.setCandidateEmail(r.getCandidateEmail());
         a.setCandidateMobile(r.getCandidateMobile());
+        a.setConsultantEmail(r.getConsultantEmail());
         a.setCandidateSigningToken(randomToken());
         a.setConsultantSigningToken(randomToken());
         a.setStatus(AgreementStatus.AWAITING_CANDIDATE);
-        return repo.save(a);
+
+        Agreement saved = repo.save(a);
+        emailService.sendClientInvitation(saved);
+        return saved;
     }
 
     public Map<String,Object> links(Agreement a) {
@@ -80,11 +85,11 @@ public class AgreementService {
         }
 
         if (party == Party.CONSULTANT && a.getCandidateSigningStatus() != SigningStatus.SIGNED) {
-            throw new IllegalArgumentException("Candidate must sign before consultant signing can proceed.");
+            throw new IllegalArgumentException("Client must review and sign before consultant signing can proceed.");
         }
 
         if (party == Party.CANDIDATE && a.getCandidateSigningStatus() == SigningStatus.SIGNED) {
-            throw new IllegalArgumentException("Candidate has already signed this agreement.");
+            throw new IllegalArgumentException("Client has already signed this agreement.");
         }
 
         if (party == Party.CONSULTANT && a.getConsultantSigningStatus() == SigningStatus.SIGNED) {
@@ -120,25 +125,44 @@ public class AgreementService {
 
     private Agreement applySignature(Agreement a, Party party, String tx, String docRef) {
         if (party == Party.CANDIDATE) {
+            if (a.getCandidateSigningStatus() == SigningStatus.SIGNED) {
+                throw new IllegalArgumentException("Client has already signed this agreement.");
+            }
             a.setCandidateSigningStatus(SigningStatus.SIGNED);
             a.setCandidateEsignTransactionId(tx);
             a.setCandidateSignedAt(LocalDateTime.now());
         } else {
+            if (a.getCandidateSigningStatus() != SigningStatus.SIGNED) {
+                throw new IllegalArgumentException("Client must sign before consultant signing can proceed.");
+            }
+            if (a.getConsultantSigningStatus() == SigningStatus.SIGNED) {
+                throw new IllegalArgumentException("Consultant has already signed this agreement.");
+            }
             a.setConsultantSigningStatus(SigningStatus.SIGNED);
             a.setConsultantEsignTransactionId(tx);
             a.setConsultantSignedAt(LocalDateTime.now());
         }
+
         if (docRef != null && !docRef.isBlank()) a.setSignedDocumentReference(docRef);
 
-        if (a.isFullySigned()) {
+        boolean fullySigned = a.isFullySigned();
+        if (fullySigned) {
             a.setStatus(AgreementStatus.FULLY_SIGNED);
             a.setCompletedAt(LocalDateTime.now());
-        } else if (a.getCandidateSigningStatus() == SigningStatus.SIGNED) {
-            a.setStatus(AgreementStatus.AWAITING_CONSULTANT);
         } else {
-            a.setStatus(AgreementStatus.AWAITING_CANDIDATE);
+            a.setStatus(AgreementStatus.AWAITING_CONSULTANT);
         }
-        return repo.save(a);
+
+        Agreement saved = repo.save(a);
+
+        if (party == Party.CANDIDATE && !fullySigned) {
+            emailService.sendConsultantInvitation(saved);
+        }
+        if (fullySigned) {
+            emailService.sendFullyExecuted(saved);
+        }
+
+        return saved;
     }
 
     public void savePdf(UUID id, String filename, byte[] bytes) throws Exception {
