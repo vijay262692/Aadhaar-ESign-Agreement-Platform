@@ -31,7 +31,6 @@ public class AgreementService {
         this.emailService = emailService;
     }
 
-    /** Agreements visible in the consultant dashboard. Hidden agreements remain in the database. */
     public List<Agreement> all() {
         return repo.findAllByConsultantDeletedFalseOrConsultantDeletedIsNullOrderByCreatedAtDesc();
     }
@@ -47,6 +46,7 @@ public class AgreementService {
             .orElseThrow(() -> new NoSuchElementException("Invalid or expired signing link"));
     }
 
+    /** Creates the agreement record only. The client is emailed after a PDF is uploaded. */
     public Agreement create(CreateAgreementRequest r) {
         Agreement a = new Agreement();
         a.setAgreementNumber("PVTP/2026-2027/CANDIDATE/" +
@@ -65,10 +65,21 @@ public class AgreementService {
         a.setCandidateSigningToken(randomToken());
         a.setConsultantSigningToken(randomToken());
         a.setStatus(AgreementStatus.AWAITING_CANDIDATE);
+        return repo.save(a);
+    }
 
-        Agreement saved = repo.save(a);
-        emailService.sendClientInvitation(saved);
-        return saved;
+    /** Sends the client invitation only after the consultant has uploaded the agreement PDF. */
+    public void sendClientInvitation(UUID id) {
+        Agreement a = get(id);
+        if (a.getOriginalPdfPath() == null || a.getOriginalPdfPath().isBlank()) {
+            throw new IllegalArgumentException("Upload the agreement PDF before sending it to the client.");
+        }
+        if (a.getCandidateEmail() == null || a.getCandidateEmail().isBlank()) {
+            throw new IllegalArgumentException("Client email is required before sending the agreement.");
+        }
+        if (!emailService.sendClientInvitation(a)) {
+            throw new IllegalStateException("Agreement was created, but the client email could not be sent.");
+        }
     }
 
     public Map<String,Object> links(Agreement a) {
@@ -83,25 +94,14 @@ public class AgreementService {
     }
 
     public Map<String,Object> startEsign(Agreement a, Party party, ESignStartRequest request) {
-        if (!request.isConsent()) {
-            throw new IllegalArgumentException("Consent is required before electronic signing.");
-        }
-
-        if (party == Party.CONSULTANT && a.getCandidateSigningStatus() != SigningStatus.SIGNED) {
-            throw new IllegalArgumentException("Client must review and sign before consultant signing can proceed.");
-        }
-
-        if (party == Party.CANDIDATE && a.getCandidateSigningStatus() == SigningStatus.SIGNED) {
-            throw new IllegalArgumentException("Client has already signed this agreement.");
-        }
-
-        if (party == Party.CONSULTANT && a.getConsultantSigningStatus() == SigningStatus.SIGNED) {
-            throw new IllegalArgumentException("Consultant has already signed this agreement.");
-        }
+        if (!request.isConsent()) throw new IllegalArgumentException("Consent is required before electronic signing.");
+        if (a.getOriginalPdfPath() == null || a.getOriginalPdfPath().isBlank()) throw new IllegalArgumentException("No agreement PDF is available for review and signing.");
+        if (party == Party.CONSULTANT && a.getCandidateSigningStatus() != SigningStatus.SIGNED) throw new IllegalArgumentException("Client must review and sign before consultant signing can proceed.");
+        if (party == Party.CANDIDATE && a.getCandidateSigningStatus() == SigningStatus.SIGNED) throw new IllegalArgumentException("Client has already signed this agreement.");
+        if (party == Party.CONSULTANT && a.getConsultantSigningStatus() == SigningStatus.SIGNED) throw new IllegalArgumentException("Consultant has already signed this agreement.");
 
         String callback = frontendBaseUrl + "/api/esign/callback";
         String tx = eSignService.createSigningRequest(a, party, callback);
-
         Map<String,Object> result = new LinkedHashMap<>();
         result.put("transactionId", tx);
         result.put("authentication", "AADHAAR_OTP");
@@ -114,9 +114,7 @@ public class AgreementService {
     @Transactional
     public Agreement callback(CallbackRequest r) {
         Agreement a = get(UUID.fromString(r.getAgreementId()));
-        if (!r.isSuccessful() || !eSignService.verifyCallback(r.getTransactionId(), r.getProviderAuditReference())) {
-            throw new IllegalArgumentException("eSign callback verification failed");
-        }
+        if (!r.isSuccessful() || !eSignService.verifyCallback(r.getTransactionId(), r.getProviderAuditReference())) throw new IllegalArgumentException("eSign callback verification failed");
         return applySignature(a, Party.valueOf(r.getParty().toUpperCase()), r.getTransactionId(), r.getSignedDocumentReference());
     }
 
@@ -126,10 +124,6 @@ public class AgreementService {
         return applySignature(a, party, "DEMO-" + UUID.randomUUID(), null);
     }
 
-    /**
-     * Removes an agreement only from the consultant dashboard.
-     * The agreement, PDF, and signing links remain stored and usable.
-     */
     @Transactional
     public void deleteForConsultant(UUID id) {
         Agreement a = get(id);
@@ -139,48 +133,32 @@ public class AgreementService {
 
     private Agreement applySignature(Agreement a, Party party, String tx, String docRef) {
         if (party == Party.CANDIDATE) {
-            if (a.getCandidateSigningStatus() == SigningStatus.SIGNED) {
-                throw new IllegalArgumentException("Client has already signed this agreement.");
-            }
+            if (a.getCandidateSigningStatus() == SigningStatus.SIGNED) throw new IllegalArgumentException("Client has already signed this agreement.");
             a.setCandidateSigningStatus(SigningStatus.SIGNED);
             a.setCandidateEsignTransactionId(tx);
             a.setCandidateSignedAt(LocalDateTime.now());
         } else {
-            if (a.getCandidateSigningStatus() != SigningStatus.SIGNED) {
-                throw new IllegalArgumentException("Client must sign before consultant signing can proceed.");
-            }
-            if (a.getConsultantSigningStatus() == SigningStatus.SIGNED) {
-                throw new IllegalArgumentException("Consultant has already signed this agreement.");
-            }
+            if (a.getCandidateSigningStatus() != SigningStatus.SIGNED) throw new IllegalArgumentException("Client must sign before consultant signing can proceed.");
+            if (a.getConsultantSigningStatus() == SigningStatus.SIGNED) throw new IllegalArgumentException("Consultant has already signed this agreement.");
             a.setConsultantSigningStatus(SigningStatus.SIGNED);
             a.setConsultantEsignTransactionId(tx);
             a.setConsultantSignedAt(LocalDateTime.now());
         }
-
         if (docRef != null && !docRef.isBlank()) a.setSignedDocumentReference(docRef);
-
         boolean fullySigned = a.isFullySigned();
-        if (fullySigned) {
-            a.setStatus(AgreementStatus.FULLY_SIGNED);
-            a.setCompletedAt(LocalDateTime.now());
-        } else {
-            a.setStatus(AgreementStatus.AWAITING_CONSULTANT);
-        }
-
+        if (fullySigned) { a.setStatus(AgreementStatus.FULLY_SIGNED); a.setCompletedAt(LocalDateTime.now()); }
+        else a.setStatus(AgreementStatus.AWAITING_CONSULTANT);
         Agreement saved = repo.save(a);
-
-        if (party == Party.CANDIDATE && !fullySigned) {
-            emailService.sendConsultantInvitation(saved);
-        }
-        if (fullySigned) {
-            emailService.sendFullyExecuted(saved);
-        }
-
+        if (party == Party.CANDIDATE && !fullySigned) emailService.sendConsultantInvitation(saved);
+        if (fullySigned) emailService.sendFullyExecuted(saved);
         return saved;
     }
 
     public void savePdf(UUID id, String filename, byte[] bytes) throws Exception {
         Agreement a = get(id);
+        String lower = filename == null ? "" : filename.toLowerCase(Locale.ROOT);
+        if (!lower.endsWith(".pdf")) throw new IllegalArgumentException("Please upload the final agreement as a PDF. PDF is required for client review and eSign.");
+        if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("Empty PDF file");
         Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
         Files.createDirectories(dir);
         String safe = UUID.randomUUID() + "-" + filename.replaceAll("[^a-zA-Z0-9._-]", "_");
@@ -197,7 +175,6 @@ public class AgreementService {
     }
 
     private String randomToken() {
-        return UUID.randomUUID().toString().replace("-", "") +
-               UUID.randomUUID().toString().replace("-", "");
+        return UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
     }
 }
