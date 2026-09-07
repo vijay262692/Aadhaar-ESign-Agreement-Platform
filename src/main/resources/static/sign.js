@@ -8,7 +8,7 @@ const $ = s => document.querySelector(s);
 function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
-  }[m]));
+  })[m]);
 }
 
 function show(t, c) {
@@ -90,7 +90,7 @@ async function init() {
       : 'You are signing as the Consultant / Proprietor.';
 
     renderDetails();
-    $('#pdfViewer').src = `/api/agreements/${agreement.id}/pdf`;
+    $('#pdfViewer').src = `/api/sign/${encodeURIComponent(party)}/${encodeURIComponent(token)}/pdf`;
     updateSigningStatus();
   } catch (e) {
     console.error(e);
@@ -118,7 +118,10 @@ async function startSign() {
       `/api/agreements/${agreement.id}/esign/start?party=${encodeURIComponent(party)}`,
       {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Signing-Token': token
+        },
         body: JSON.stringify({
           consent: true,
           idProofType: $('#idProofType').value || null,
@@ -156,7 +159,10 @@ async function demoSign() {
   if (!confirm('Demo only: mark this party as signed?')) return;
 
   try {
-    const r = await fetch(`/api/agreements/${agreement.id}/demo-sign?party=${encodeURIComponent(party)}`, {method:'POST'});
+    const r = await fetch(`/api/agreements/${agreement.id}/demo-sign?party=${encodeURIComponent(party)}`, {
+      method:'POST',
+      headers: {'X-Signing-Token': token}
+    });
     if (!r.ok) {
       show('Demo signing is disabled.', 'error');
       return;
