@@ -1,5 +1,6 @@
 package com.pvtalent.esign.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -52,6 +53,9 @@ public class Agreement {
     private LocalDateTime createdAt;
     private String originalPdfPath;
 
+    /** Soft-delete flag used only to hide an agreement from the consultant dashboard. */
+    private Boolean consultantDeleted = false;
+
     @PrePersist
     void created() { createdAt = LocalDateTime.now(); }
 
@@ -65,6 +69,10 @@ public class Agreement {
         return candidateSigningStatus == SigningStatus.SIGNED
             && consultantSigningStatus == SigningStatus.SIGNED;
     }
+
+    @JsonIgnore
+    public boolean isConsultantDeleted() { return Boolean.TRUE.equals(consultantDeleted); }
+    public void setConsultantDeleted(Boolean v) { consultantDeleted = v; }
 
     public UUID getId(){return id;}
     public String getAgreementNumber(){return agreementNumber;}
