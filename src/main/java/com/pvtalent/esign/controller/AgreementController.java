@@ -49,10 +49,21 @@ public class AgreementController {
         return service.getByToken(token, Party.valueOf(party.toUpperCase()));
     }
 
+    /** Public signing-page PDF endpoint. Access is authorized by the secure signing token. */
+    @GetMapping("/sign/{party}/{token}/pdf")
+    public ResponseEntity<byte[]> signingPdf(@PathVariable String party, @PathVariable String token) throws Exception {
+        Agreement agreement = service.getByToken(token, Party.valueOf(party.toUpperCase()));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=agreement.pdf")
+                .body(service.readPdf(agreement.getId()));
+    }
+
     @PostMapping("/agreements/{id}/esign/start")
     public ResponseEntity<?> start(
             @PathVariable UUID id,
             @RequestParam String party,
+            @RequestHeader(value = "X-Signing-Token", required = false) String signingToken,
             @RequestBody(required = false) ESignStartRequest request) {
 
         if (request == null || !request.isConsent()) {
@@ -63,13 +74,27 @@ public class AgreementController {
 
         try {
             Party signingParty = Party.valueOf(party.toUpperCase());
+            if (signingToken == null || signingToken.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Secure signing token is required."));
+            }
+
+            Agreement tokenAgreement = service.getByToken(signingToken, signingParty);
+            if (!id.equals(tokenAgreement.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Signing token does not match this agreement."));
+            }
+
             return ResponseEntity.ok(
-                service.startEsign(service.get(id), signingParty, request)
+                service.startEsign(tokenAgreement, signingParty, request)
             );
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(
                 Map.of("message", ex.getMessage() == null ? "Invalid signing request." : ex.getMessage())
             );
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired signing link."));
         }
     }
 
@@ -91,6 +116,7 @@ public class AgreementController {
         return Map.of("message", "PDF uploaded");
     }
 
+    /** Consultant/admin PDF access from the authenticated dashboard. */
     @GetMapping("/agreements/{id}/pdf")
     public ResponseEntity<byte[]> pdf(@PathVariable UUID id) throws Exception {
         return ResponseEntity.ok()
