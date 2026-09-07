@@ -9,10 +9,18 @@ services:
     autoDeploy: true
     healthCheckPath: /
     envVars:
-      - key: DB_URL
+      - key: DB_HOST
         fromDatabase:
           name: pv-talent-db
-          property: connectionString
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: pv-talent-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: pv-talent-db
+          property: database
       - key: DB_USERNAME
         fromDatabase:
           name: pv-talent-db
