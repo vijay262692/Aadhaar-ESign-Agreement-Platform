@@ -52,6 +52,8 @@ services:
         value: "https://api.brevo.com/v3/smtp/email"
       - key: BREVO_API_KEY
         sync: false
+      - key: BREVO_FROM_NAME
+        value: "PV Talent Partners"
       - key: MAIL_FROM
         value: "pvtalentpartners@gmail.com"
       - key: MAIL_HOST
