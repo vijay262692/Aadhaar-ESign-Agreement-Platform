@@ -20,7 +20,7 @@ async function loadAgreements(){
       <td>${badge(a.consultantSigningStatus)}</td>
       <td class="status">${esc(a.status)}</td>
       <td class="actions-cell">
-        <button class="ghost" onclick="links('${a.id}')">Links</button>
+        <button class="ghost" type="button" onclick="showSigningLinks('${a.id}')">Links</button>
         <a class="ghost" href="/api/agreements/${a.id}/pdf" target="_blank">PDF</a>
       </td>
     </tr>`).join('');
@@ -28,13 +28,21 @@ async function loadAgreements(){
 function badge(v){return `<span class="badge ${v==='SIGNED'?'ok':'pending'}">${v==='SIGNED'?'✓ Signed':'Pending'}</span>`}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 
-async function links(id){
-  const a=await (await api('/api/agreements/'+id)).json();
-  const base=location.origin;
-  const c=base+'/sign.html?party=candidate&token='+a.candidateSigningToken;
-  const s=base+'/sign.html?party=consultant&token='+a.consultantSigningToken;
-  alert('Candidate signing link:\\n'+c+'\\n\\nConsultant signing link:\\n'+s);
+async function showSigningLinks(id){
+  try {
+    const res=await api('/api/agreements/'+id);
+    if(!res.ok) throw new Error('Unable to load agreement');
+    const a=await res.json();
+    const base=location.origin;
+    const c=base+'/sign.html?party=candidate&token='+a.candidateSigningToken;
+    const s=base+'/sign.html?party=consultant&token='+a.consultantSigningToken;
+    alert('Candidate signing link:\n'+c+'\n\nConsultant signing link:\n'+s);
+  } catch(e) {
+    alert('Could not load signing links. Please refresh and try again.');
+    console.error(e);
+  }
 }
+
 $('#createForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const obj=Object.fromEntries(new FormData(e.target).entries());
@@ -44,6 +52,6 @@ $('#createForm').addEventListener('submit',async e=>{
   closeCreate();e.target.reset();await loadAgreements();
   const base=location.origin;
   const c=base+'/sign.html?party=candidate&token='+a.candidateSigningToken;
-  alert('Agreement created.\\n\\nCandidate signing link:\\n'+c);
+  alert('Agreement created.\n\nCandidate signing link:\n'+c);
 });
 loadAgreements();
