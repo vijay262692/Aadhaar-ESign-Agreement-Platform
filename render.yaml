@@ -47,15 +47,15 @@ services:
       - key: APP_UPLOAD_DIR
         value: "./uploads"
       - key: MAIL_HOST
-        value: ""
+        value: "smtp.gmail.com"
       - key: MAIL_PORT
         value: "587"
       - key: MAIL_USERNAME
-        value: ""
+        value: "pvtalentpartners@gmail.com"
       - key: MAIL_PASSWORD
         sync: false
       - key: MAIL_FROM
-        value: ""
+        value: "pvtalentpartners@gmail.com"
       - key: MAIL_SMTP_AUTH
         value: "true"
       - key: MAIL_SMTP_STARTTLS
