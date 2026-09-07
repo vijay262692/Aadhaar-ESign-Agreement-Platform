@@ -104,9 +104,29 @@ public class AgreementController {
     }
 
     @PostMapping("/agreements/{id}/demo-sign")
-    public ResponseEntity<?> demoSign(@PathVariable UUID id, @RequestParam String party) {
+    public ResponseEntity<?> demoSign(
+            @PathVariable UUID id,
+            @RequestParam String party,
+            @RequestHeader(value = "X-Signing-Token", required = false) String signingToken) {
         if (!demoSigningEnabled) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        return ResponseEntity.ok(service.demoSign(id, Party.valueOf(party.toUpperCase())));
+        try {
+            Party signingParty = Party.valueOf(party.toUpperCase());
+            if (signingToken == null || signingToken.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Secure signing token is required."));
+            }
+            Agreement tokenAgreement = service.getByToken(signingToken, signingParty);
+            if (!id.equals(tokenAgreement.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Signing token does not match this agreement."));
+            }
+            return ResponseEntity.ok(service.demoSign(id, signingParty));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired signing link."));
+        }
     }
 
     @PostMapping("/agreements/{id}/pdf")
