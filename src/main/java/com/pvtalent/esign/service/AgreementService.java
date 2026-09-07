@@ -2,6 +2,7 @@ package com.pvtalent.esign.service;
 
 import com.pvtalent.esign.dto.CallbackRequest;
 import com.pvtalent.esign.dto.CreateAgreementRequest;
+import com.pvtalent.esign.dto.ESignStartRequest;
 import com.pvtalent.esign.dto.SignRequest;
 import com.pvtalent.esign.model.*;
 import com.pvtalent.esign.repository.AgreementRepository;
@@ -70,9 +71,36 @@ public class AgreementService {
     }
 
     public Map<String,Object> startEsign(Agreement a, Party party) {
+        return startEsign(a, party, new ESignStartRequest());
+    }
+
+    public Map<String,Object> startEsign(Agreement a, Party party, ESignStartRequest request) {
+        if (!request.isConsent()) {
+            throw new IllegalArgumentException("Consent is required before electronic signing.");
+        }
+
+        if (party == Party.CONSULTANT && a.getCandidateSigningStatus() != SigningStatus.SIGNED) {
+            throw new IllegalArgumentException("Candidate must sign before consultant signing can proceed.");
+        }
+
+        if (party == Party.CANDIDATE && a.getCandidateSigningStatus() == SigningStatus.SIGNED) {
+            throw new IllegalArgumentException("Candidate has already signed this agreement.");
+        }
+
+        if (party == Party.CONSULTANT && a.getConsultantSigningStatus() == SigningStatus.SIGNED) {
+            throw new IllegalArgumentException("Consultant has already signed this agreement.");
+        }
+
         String callback = frontendBaseUrl + "/api/esign/callback";
         String tx = eSignService.createSigningRequest(a, party, callback);
-        return Map.of("transactionId", tx, "message", "Redirect the user to the provider's signing URL here.");
+
+        Map<String,Object> result = new LinkedHashMap<>();
+        result.put("transactionId", tx);
+        result.put("authentication", "AADHAAR_OTP");
+        result.put("signingMethod", "ELECTRONIC_SIGNATURE");
+        result.put("idProofOptional", true);
+        result.put("message", "Aadhaar OTP eSign transaction created. Redirect the signer to the authorised provider signing URL.");
+        return result;
     }
 
     @Transactional
