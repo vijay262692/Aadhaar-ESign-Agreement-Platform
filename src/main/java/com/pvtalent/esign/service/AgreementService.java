@@ -31,7 +31,10 @@ public class AgreementService {
         this.emailService = emailService;
     }
 
-    public List<Agreement> all() { return repo.findAll(); }
+    /** Agreements visible in the consultant dashboard. Hidden agreements remain in the database. */
+    public List<Agreement> all() {
+        return repo.findAllByConsultantDeletedFalseOrConsultantDeletedIsNullOrderByCreatedAtDesc();
+    }
 
     public Agreement get(UUID id) {
         return repo.findById(id).orElseThrow(() -> new NoSuchElementException("Agreement not found"));
@@ -121,6 +124,20 @@ public class AgreementService {
     public Agreement demoSign(UUID id, Party party) {
         Agreement a = get(id);
         return applySignature(a, party, "DEMO-" + UUID.randomUUID(), null);
+    }
+
+    /**
+     * Hides an agreement from the consultant dashboard without deleting the actual agreement.
+     * Client/consultant signing links remain valid, so an in-progress signing flow is not broken.
+     */
+    @Transactional
+    public void deleteForConsultant(UUID id) {
+        Agreement a = get(id);
+        if (a.isFullySigned()) {
+            throw new IllegalArgumentException("A fully signed agreement cannot be removed from the consultant dashboard.");
+        }
+        a.setConsultantDeleted(true);
+        repo.save(a);
     }
 
     private Agreement applySignature(Agreement a, Party party, String tx, String docRef) {
