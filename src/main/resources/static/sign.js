@@ -1,59 +1,174 @@
-const params=new URLSearchParams(location.search);
-const party=params.get('party');
-const token=params.get('token');
+const params = new URLSearchParams(location.search);
+const party = params.get('party');
+const token = params.get('token');
 let agreement;
 
-const $=s=>document.querySelector(s);
-function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])}
+const $ = s => document.querySelector(s);
 
-async function init(){
-  if(!party||!token){show('Invalid signing link','error');return}
-  const r=await fetch(`/api/sign/${encodeURIComponent(party)}/${encodeURIComponent(token)}`);
-  if(!r.ok){show('This signing link is invalid or expired.','error');return}
-  agreement=await r.json();
-  $('#heading').textContent=agreement.agreementNumber;
-  $('#partyName').textContent=party==='candidate'?agreement.candidateFullName:'PV Talent Partners';
-  $('#partyText').textContent=party==='candidate'
-    ? 'You are signing as the Candidate.'
-    : 'You are signing as the Consultant / Proprietor.';
-  $('#details').innerHTML=`
-    ${d('Candidate',agreement.candidateFullName)}
-    ${d('Execution Date',agreement.executionDate)}
-    ${d('Total Fee',agreement.totalFeeAmount)}
-    ${d('Pre-Payment',agreement.prePaymentAmount)}
-    ${d('Balance',agreement.balanceAmount)}
-    ${d('Agreement Status',agreement.status)}
-    ${d('Candidate Signature',agreement.candidateSigningStatus)}
-    ${d('Consultant Signature',agreement.consultantSigningStatus)}
-  `;
-  const already=party==='candidate'?agreement.candidateSigningStatus==='SIGNED':agreement.consultantSigningStatus==='SIGNED';
-  if(already){$('#signBtn').disabled=true;$('#signBtn').textContent='✓ Already Signed';}
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[m]));
 }
-function d(k,v){return `<div class="detail"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`}
-function show(t,c){$('#notice').textContent=t;$('#notice').className='notice '+c}
-async function startSign(){
-  const r=await fetch(`/api/agreements/${agreement.id}/esign/start?party=${party}`,{method:'POST'});
-  const data=await r.json();
-  // Replace this line with the real provider redirect URL returned by your authorised eSign integration.
-  alert('eSign transaction created:\\n'+data.transactionId+'\\n\\nConnect your authorised eSign provider here for the actual Aadhaar OTP/signing flow.');
+
+function show(t, c) {
+  $('#notice').textContent = t;
+  $('#notice').className = 'notice ' + (c || '');
 }
-async function demoSign(){
-  if(!confirm('Demo only: mark this party as signed?')) return;
-  const r=await fetch(`/api/agreements/${agreement.id}/demo-sign?party=${party}`,{method:'POST'});
-  if(!r.ok){show('Demo signing is disabled.','error');return}
-  agreement=await r.json();
-  show('Signature recorded in the local prototype.','success');
-  $('#signBtn').textContent='✓ Signed';
-  $('#signBtn').disabled=true;
-  $('#details').innerHTML=`
-    ${d('Candidate',agreement.candidateFullName)}
-    ${d('Execution Date',agreement.executionDate)}
-    ${d('Total Fee',agreement.totalFeeAmount)}
-    ${d('Pre-Payment',agreement.prePaymentAmount)}
-    ${d('Balance',agreement.balanceAmount)}
-    ${d('Agreement Status',agreement.status)}
-    ${d('Candidate Signature',agreement.candidateSigningStatus)}
-    ${d('Consultant Signature',agreement.consultantSigningStatus)}
+
+function d(k, v) {
+  return `<div class="detail"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`;
+}
+
+function renderDetails() {
+  $('#details').innerHTML = `
+    ${d('Agreement Number', agreement.agreementNumber)}
+    ${d('Candidate', agreement.candidateFullName)}
+    ${d('Execution Date', agreement.executionDate)}
+    ${d('Total Fee', agreement.totalFeeAmount)}
+    ${d('Pre-Payment', agreement.prePaymentAmount)}
+    ${d('Balance', agreement.balanceAmount)}
+    ${d('Agreement Status', agreement.status)}
+    ${d('Candidate Signature', agreement.candidateSigningStatus)}
+    ${d('Consultant Signature', agreement.consultantSigningStatus)}
   `;
 }
+
+function updateSigningStatus() {
+  if (!agreement) return;
+
+  const already = party === 'candidate'
+    ? agreement.candidateSigningStatus === 'SIGNED'
+    : agreement.consultantSigningStatus === 'SIGNED';
+
+  const btn = $('#signBtn');
+
+  if (agreement.status === 'FULLY_SIGNED') {
+    btn.disabled = true;
+    btn.textContent = '✓ Agreement Fully Executed';
+    $('#signStatus').innerHTML = '<div class="success-status">✓ Both parties have signed this agreement.</div>';
+    return;
+  }
+
+  if (already) {
+    btn.disabled = true;
+    btn.textContent = '✓ Already Signed';
+    $('#signStatus').innerHTML = '<div class="success-status">✓ Your signature has already been recorded.</div>';
+    return;
+  }
+
+  if (party === 'consultant' && agreement.candidateSigningStatus !== 'SIGNED') {
+    btn.disabled = true;
+    btn.textContent = 'Waiting for Candidate Signature';
+    $('#signStatus').innerHTML = '<div class="waiting-status">Candidate signature is required before consultant signing can proceed.</div>';
+    return;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔐 Continue with Aadhaar OTP eSign';
+}
+
+async function init() {
+  if (!party || !token || !['candidate','consultant'].includes(party)) {
+    show('Invalid signing link.', 'error');
+    return;
+  }
+
+  try {
+    const r = await fetch(`/api/sign/${encodeURIComponent(party)}/${encodeURIComponent(token)}`);
+    if (!r.ok) {
+      show('This signing link is invalid or expired.', 'error');
+      return;
+    }
+
+    agreement = await r.json();
+    $('#heading').textContent = agreement.agreementNumber;
+    $('#partyName').textContent = party === 'candidate' ? agreement.candidateFullName : 'PV Talent Partners';
+    $('#partyText').textContent = party === 'candidate'
+      ? 'You are signing as the Candidate.'
+      : 'You are signing as the Consultant / Proprietor.';
+
+    renderDetails();
+    $('#pdfViewer').src = `/api/agreements/${agreement.id}/pdf`;
+    updateSigningStatus();
+  } catch (e) {
+    console.error(e);
+    show('Unable to load the agreement.', 'error');
+  }
+}
+
+async function startSign() {
+  if (!agreement) {
+    show('Agreement is not loaded.', 'error');
+    return;
+  }
+
+  if (!$('#consent').checked) {
+    show('Please review the agreement and provide your consent before signing.', 'error');
+    return;
+  }
+
+  const button = $('#signBtn');
+  button.disabled = true;
+  button.textContent = 'Starting secure eSign…';
+
+  try {
+    const response = await fetch(
+      `/api/agreements/${agreement.id}/esign/start?party=${encodeURIComponent(party)}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          consent: true,
+          idProofType: $('#idProofType').value || null,
+          idProofNumber: $('#idProofNumber').value.trim() || null
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.message || 'Unable to start eSign.');
+
+    if (data.signingUrl) {
+      window.location.href = data.signingUrl;
+      return;
+    }
+
+    if (data.transactionId) {
+      show('eSign transaction created. Connect the authorised provider redirect to continue with Aadhaar OTP.', 'success');
+      button.disabled = false;
+      button.textContent = '🔐 Continue with Aadhaar OTP eSign';
+      return;
+    }
+
+    throw new Error('No eSign URL returned by the server.');
+  } catch (e) {
+    console.error(e);
+    show(e.message || 'Unable to start Aadhaar OTP eSign.', 'error');
+    button.disabled = false;
+    button.textContent = '🔐 Continue with Aadhaar OTP eSign';
+  }
+}
+
+async function demoSign() {
+  if (!confirm('Demo only: mark this party as signed?')) return;
+
+  try {
+    const r = await fetch(`/api/agreements/${agreement.id}/demo-sign?party=${encodeURIComponent(party)}`, {method:'POST'});
+    if (!r.ok) {
+      show('Demo signing is disabled.', 'error');
+      return;
+    }
+
+    agreement = await r.json();
+    renderDetails();
+    updateSigningStatus();
+    show('Signature recorded in the local prototype.', 'success');
+  } catch (e) {
+    console.error(e);
+    show('Demo signing failed.', 'error');
+  }
+}
+
 init();
