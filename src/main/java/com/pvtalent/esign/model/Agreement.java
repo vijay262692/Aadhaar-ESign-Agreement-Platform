@@ -1,5 +1,6 @@
 package com.pvtalent.esign.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -21,6 +22,7 @@ public class Agreement {
     private String candidateIdProofReference;
     private String candidateEmail;
     private String candidateMobile;
+    private String consultantEmail;
     private String totalFeeAmount;
     private String prePaymentAmount;
     private String balanceAmount;
@@ -53,6 +55,12 @@ public class Agreement {
     @PrePersist
     void created() { createdAt = LocalDateTime.now(); }
 
+    @JsonProperty("valid")
+    @Transient
+    public boolean isValid() {
+        return isFullySigned();
+    }
+
     public boolean isFullySigned() {
         return candidateSigningStatus == SigningStatus.SIGNED
             && consultantSigningStatus == SigningStatus.SIGNED;
@@ -73,6 +81,8 @@ public class Agreement {
     public void setCandidateEmail(String v){candidateEmail=v;}
     public String getCandidateMobile(){return candidateMobile;}
     public void setCandidateMobile(String v){candidateMobile=v;}
+    public String getConsultantEmail(){return consultantEmail;}
+    public void setConsultantEmail(String v){consultantEmail=v;}
     public String getTotalFeeAmount(){return totalFeeAmount;}
     public void setTotalFeeAmount(String v){totalFeeAmount=v;}
     public String getPrePaymentAmount(){return prePaymentAmount;}
