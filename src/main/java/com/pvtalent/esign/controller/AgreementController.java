@@ -34,6 +34,16 @@ public class AgreementController {
     @GetMapping("/agreements/{id}")
     public Agreement get(@PathVariable UUID id) { return service.get(id); }
 
+    @DeleteMapping("/agreements/{id}/consultant")
+    public ResponseEntity<?> deleteForConsultant(@PathVariable UUID id) {
+        try {
+            service.deleteForConsultant(id);
+            return ResponseEntity.ok(Map.of("message", "Agreement removed from consultant dashboard."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
+    }
+
     @GetMapping("/sign/{party}/{token}")
     public Agreement signingView(@PathVariable String party, @PathVariable String token) {
         return service.getByToken(token, Party.valueOf(party.toUpperCase()));
