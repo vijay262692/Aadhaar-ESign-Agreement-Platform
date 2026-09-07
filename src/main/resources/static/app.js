@@ -22,6 +22,7 @@ async function loadAgreements(){
       <td class="actions-cell">
         <button class="ghost" type="button" onclick="showSigningLinks('${a.id}')">Links</button>
         <a class="ghost" href="/api/agreements/${a.id}/pdf" target="_blank">PDF</a>
+        <button class="danger" type="button" onclick="deleteForConsultant('${a.id}','${esc(a.agreementNumber)}')">Delete</button>
       </td>
     </tr>`).join('');
 }
@@ -39,6 +40,22 @@ async function showSigningLinks(id){
     alert('Client signing link:\n'+c+'\n\nConsultant signing link:\n'+s);
   } catch(e) {
     alert('Could not load signing links. Please refresh and try again.');
+    console.error(e);
+  }
+}
+
+async function deleteForConsultant(id, agreementNumber){
+  const ok=confirm('Delete '+agreementNumber+' from the Consultant dashboard only?\n\nThe agreement will remain stored and the client/consultant signing links will continue to work.');
+  if(!ok) return;
+
+  try {
+    const res=await fetch('/api/agreements/'+id+'/consultant',{method:'DELETE'});
+    const body=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(body.message || 'Could not delete agreement');
+    await loadAgreements();
+    alert('Agreement removed from the Consultant dashboard.');
+  } catch(e) {
+    alert(e.message || 'Could not delete agreement');
     console.error(e);
   }
 }
