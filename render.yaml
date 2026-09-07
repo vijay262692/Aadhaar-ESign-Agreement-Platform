@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: pv-talent-esign
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: DB_URL
+        fromDatabase:
+          name: pv-talent-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: pv-talent-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pv-talent-db
+          property: password
+      - key: APP_FRONTEND_BASE_URL
+        fromService:
+          type: web
+          name: pv-talent-esign
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DEMO_SIGNING_ENABLED
+        value: "false"
+      - key: ESIGN_PROVIDER
+        value: "NOT_CONFIGURED"
+      - key: ESIGN_API_URL
+        value: ""
+      - key: ESIGN_CLIENT_ID
+        value: ""
+      - key: ESIGN_CLIENT_SECRET
+        sync: false
+      - key: APP_UPLOAD_DIR
+        value: "./uploads"
+
+databases:
+  - name: pv-talent-db
+    plan: free
+    region: singapore
+    databaseName: pv_talent
+    user: pvtalent
