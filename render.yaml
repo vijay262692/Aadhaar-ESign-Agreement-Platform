@@ -46,6 +46,20 @@ services:
         sync: false
       - key: APP_UPLOAD_DIR
         value: "./uploads"
+      - key: MAIL_HOST
+        value: ""
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        value: ""
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        value: ""
+      - key: MAIL_SMTP_AUTH
+        value: "true"
+      - key: MAIL_SMTP_STARTTLS
+        value: "true"
 
 databases:
   - name: pv-talent-db
