@@ -40,8 +40,27 @@ public class AgreementController {
     }
 
     @PostMapping("/agreements/{id}/esign/start")
-    public Map<String,Object> start(@PathVariable UUID id, @RequestParam String party) {
-        return service.startEsign(service.get(id), Party.valueOf(party.toUpperCase()));
+    public ResponseEntity<?> start(
+            @PathVariable UUID id,
+            @RequestParam String party,
+            @RequestBody(required = false) ESignStartRequest request) {
+
+        if (request == null || !request.isConsent()) {
+            return ResponseEntity.badRequest().body(
+                Map.of("message", "Consent is required before electronic signing.")
+            );
+        }
+
+        try {
+            Party signingParty = Party.valueOf(party.toUpperCase());
+            return ResponseEntity.ok(
+                service.startEsign(service.get(id), signingParty, request)
+            );
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(
+                Map.of("message", ex.getMessage() == null ? "Invalid signing request." : ex.getMessage())
+            );
+        }
     }
 
     @PostMapping("/esign/callback")
