@@ -23,14 +23,15 @@ function d(k, v) {
 function renderDetails() {
   $('#details').innerHTML = `
     ${d('Agreement Number', agreement.agreementNumber)}
-    ${d('Candidate', agreement.candidateFullName)}
+    ${d('Client', agreement.candidateFullName)}
     ${d('Execution Date', agreement.executionDate)}
     ${d('Total Fee', agreement.totalFeeAmount)}
     ${d('Pre-Payment', agreement.prePaymentAmount)}
     ${d('Balance', agreement.balanceAmount)}
     ${d('Agreement Status', agreement.status)}
-    ${d('Candidate Signature', agreement.candidateSigningStatus)}
+    ${d('Client Signature', agreement.candidateSigningStatus)}
     ${d('Consultant Signature', agreement.consultantSigningStatus)}
+    ${d('Agreement Valid', agreement.valid ? 'YES - Fully Executed' : 'NO - Both Signatures Required')}
   `;
 }
 
@@ -46,21 +47,21 @@ function updateSigningStatus() {
   if (agreement.status === 'FULLY_SIGNED') {
     btn.disabled = true;
     btn.textContent = '✓ Agreement Fully Executed';
-    $('#signStatus').innerHTML = '<div class="success-status">✓ Both parties have signed this agreement.</div>';
+    $('#signStatus').innerHTML = '<div class="success-status">✓ Both parties have signed. This agreement is fully executed and valid.</div>';
     return;
   }
 
   if (already) {
     btn.disabled = true;
     btn.textContent = '✓ Already Signed';
-    $('#signStatus').innerHTML = '<div class="success-status">✓ Your signature has already been recorded.</div>';
+    $('#signStatus').innerHTML = '<div class="success-status">✓ Your signature has already been recorded. The agreement is not fully valid until both parties have signed.</div>';
     return;
   }
 
   if (party === 'consultant' && agreement.candidateSigningStatus !== 'SIGNED') {
     btn.disabled = true;
-    btn.textContent = 'Waiting for Candidate Signature';
-    $('#signStatus').innerHTML = '<div class="waiting-status">Candidate signature is required before consultant signing can proceed.</div>';
+    btn.textContent = 'Waiting for Client Signature';
+    $('#signStatus').innerHTML = '<div class="waiting-status">Client review and signature is required before consultant signing can proceed.</div>';
     return;
   }
 
@@ -85,7 +86,7 @@ async function init() {
     $('#heading').textContent = agreement.agreementNumber;
     $('#partyName').textContent = party === 'candidate' ? agreement.candidateFullName : 'PV Talent Partners';
     $('#partyText').textContent = party === 'candidate'
-      ? 'You are signing as the Candidate.'
+      ? 'You are signing as the Client.'
       : 'You are signing as the Consultant / Proprietor.';
 
     renderDetails();
