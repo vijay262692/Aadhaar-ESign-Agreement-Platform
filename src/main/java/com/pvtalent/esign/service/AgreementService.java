@@ -36,7 +36,6 @@ public class AgreementService {
             .orElseThrow(() -> new NoSuchElementException("Invalid or expired signing link"));
     }
 
-    /** Creates only the agreement record. PDF generation and email are separate steps. */
     public Agreement create(CreateAgreementRequest r) {
         Agreement a = new Agreement();
         a.setAgreementNumber("PVTP/2026-2027/CANDIDATE/" + UUID.randomUUID().toString().substring(0,8).toUpperCase());
@@ -68,8 +67,7 @@ public class AgreementService {
         Map<String,Object> result = new LinkedHashMap<>(); result.put("transactionId", tx); result.put("authentication", "AADHAAR_OTP"); result.put("signingMethod", "ELECTRONIC_SIGNATURE"); result.put("idProofOptional", true); result.put("message", "Aadhaar OTP eSign transaction created. Redirect the signer to the authorised provider signing URL."); return result;
     }
 
-    @Transactional
-    public Agreement acceptAgreement(Agreement a, Party party) { return applySignature(a, party, "ACCEPTED-" + UUID.randomUUID(), "ACCEPTANCE_BUTTON"); }
+    @Transactional public Agreement acceptAgreement(Agreement a, Party party) { return applySignature(a, party, "ACCEPTED-" + UUID.randomUUID(), "ACCEPTANCE_BUTTON"); }
     @Transactional public Agreement callback(CallbackRequest r) { Agreement a=get(UUID.fromString(r.getAgreementId())); if(!r.isSuccessful() || !eSignService.verifyCallback(r.getTransactionId(),r.getProviderAuditReference())) throw new IllegalArgumentException("eSign callback verification failed"); return applySignature(a,Party.valueOf(r.getParty().toUpperCase()),r.getTransactionId(),r.getSignedDocumentReference()); }
     @Transactional public Agreement demoSign(UUID id, Party party) { return applySignature(get(id),party,"DEMO-"+UUID.randomUUID(),null); }
     @Transactional public void deleteForConsultant(UUID id) { Agreement a=get(id); a.setConsultantDeleted(true); repo.save(a); }
@@ -88,14 +86,13 @@ public class AgreementService {
         if(fullySigned){a.setStatus(AgreementStatus.FULLY_SIGNED);a.setCompletedAt(LocalDateTime.now());} else a.setStatus(AgreementStatus.AWAITING_CONSULTANT);
         Agreement saved=repo.save(a);
         try { pdfSignatureService.appendSignatureRecord(saved, party); } catch (Exception ignored) { }
-        if(party==Party.CANDIDATE && !fullySigned) emailService.sendConsultantInvitation(saved);
-        if(fullySigned) emailService.sendFullyExecuted(saved);
+        if(party==Party.CANDIDATE && !fullySigned){ ensurePdfAvailable(saved); emailService.sendConsultantInvitation(saved); }
+        if(fullySigned){ ensurePdfAvailable(saved); emailService.sendFullyExecuted(saved); }
         return saved;
     }
 
     public void savePdf(UUID id,String filename,byte[] bytes)throws Exception{ Agreement a=get(id); String lower=filename==null?"":filename.toLowerCase(Locale.ROOT); if(!lower.endsWith(".pdf"))throw new IllegalArgumentException("Please upload the final agreement as a PDF."); if(bytes==null||bytes.length==0)throw new IllegalArgumentException("Empty PDF file"); Path dir=Paths.get(uploadDir).toAbsolutePath().normalize(); Files.createDirectories(dir); String safe=UUID.randomUUID()+"-"+filename.replaceAll("[^a-zA-Z0-9._-]","_"); Path out=dir.resolve(safe); Files.write(out,bytes,StandardOpenOption.CREATE_NEW); a.setOriginalPdfPath(out.toString()); repo.save(a); }
 
-    /** Returns the PDF. If Render has restarted and its ephemeral uploads folder was cleared, rebuild it from the stored agreement data. */
     public synchronized byte[] readPdf(UUID id)throws Exception{
         Agreement a=get(id);
         if(a.getOriginalPdfPath()!=null&&!a.getOriginalPdfPath().isBlank()){
@@ -107,14 +104,12 @@ public class AgreementService {
 
     private byte[] rebuildMissingPdf(Agreement a) throws Exception {
         String generated=pdfGenerator.generate(a,uploadDir);
-        byte[] bytes=Files.readAllBytes(Paths.get(generated));
         a.setOriginalPdfPath(generated);
         repo.save(a);
         if(a.getCandidateSigningStatus()==SigningStatus.SIGNED) pdfSignatureService.appendSignatureRecord(a,Party.CANDIDATE);
         if(a.getConsultantSigningStatus()==SigningStatus.SIGNED) pdfSignatureService.appendSignatureRecord(a,Party.CONSULTANT);
         Path finalPath=Paths.get(generated);
-        if(Files.exists(finalPath)) bytes=Files.readAllBytes(finalPath);
-        return bytes;
+        return Files.readAllBytes(finalPath);
     }
 
     private void ensurePdfAvailable(Agreement a) {
