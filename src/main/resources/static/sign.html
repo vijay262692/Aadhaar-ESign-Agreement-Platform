@@ -2,36 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Secure Agreement Signing | PV Talent Partners</title>
+<title>Agreement Acceptance | PV Talent Partners</title>
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 <header class="topbar"><div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Secure Agreement Signing</small></div></div></header>
 <main class="container narrow">
-<section class="hero compact"><div><p class="eyebrow">SECURE DIGITAL SIGNING</p><h1 id="heading">Agreement</h1><p>Review the agreement and complete Aadhaar OTP based electronic signing.</p></div></section>
+<section class="hero compact"><div><p class="eyebrow">SECURE AGREEMENT SIGNING</p><h1 id="heading">Agreement</h1><p>Review the complete agreement before accepting and signing.</p></div></section>
 <section class="card">
  <div id="notice" class="notice"></div>
  <div class="section-title"><h2>Agreement Details</h2><p>Verify the details before signing.</p></div>
  <div class="details" id="details"></div>
- <div class="section-title pdf-title"><h2>Agreement Document</h2><p>Download or view the exact PDF uploaded by the consultant. Please read the complete document before signing.</p></div>
- <div class="document-actions"><a id="downloadPdf" class="ghost" href="#" download="agreement.pdf">⬇ Download PDF</a></div>
+ <div class="section-title pdf-title"><h2>Agreement Document</h2><p>Please read the complete agreement. This is the same agreement prepared by PV Talent Partners.</p></div>
+ <div class="document-actions"><a id="downloadPdf" class="ghost" href="#" download="agreement.pdf">⬇ Download agreement.pdf</a></div>
  <div class="pdf-box"><iframe id="pdfViewer" title="Agreement PDF"></iframe></div>
- <div class="section-title"><h2>Optional Identity Information</h2><p>This information is for identity/document reference only. It is <strong>not</strong> your electronic signature.</p></div>
- <div class="grid">
-  <label>ID Proof Type<select id="idProofType"><option value="">Select ID type</option><option value="PAN">PAN</option><option value="PASSPORT">Passport</option><option value="DRIVING_LICENSE">Driving Licence</option><option value="VOTER_ID">Voter ID</option><option value="OTHER">Other</option></select></label>
-  <label>ID Reference<input id="idProofNumber" type="text" placeholder="Optional reference" autocomplete="off"></label>
+ <div class="acceptance-box">
+  <label class="checkbox-row"><input id="consent" type="checkbox"><span><strong>I have reviewed the complete agreement and I accept all the Terms &amp; Conditions stated in this Agreement.</strong></span></label>
+  <p>By checking this box and clicking the button below, I confirm my acceptance of the agreement and authorise PV Talent Partners to record my electronic acceptance as my signature for this agreement.</p>
  </div>
- <div class="consent-box"><label class="checkbox-row"><input id="consent" type="checkbox"><span>I have reviewed the agreement and confirm that the information provided is correct. I consent to electronic signing of this agreement through the authorised eSign service.</span></label></div>
  <div class="signbox">
   <div><span class="eyebrow">SIGNING PARTY</span><h2 id="partyName">—</h2><p id="partyText"></p></div>
-  <button id="signBtn" class="primary" onclick="startSign()">🔐 Continue with Aadhaar OTP eSign</button>
+  <button id="signBtn" class="primary" onclick="acceptSign()">✓ I Accept the Agreement &amp; Sign</button>
  </div>
  <div id="signStatus" class="sign-status"></div>
- <div class="security-note"><strong>🔒 Secure eSign</strong><p>Aadhaar OTP authentication and the digital signature are performed through an authorised eSign service provider. PV Talent Partners does not use PAN or another ID document as a substitute for the electronic signature.</p></div>
- <div class="demo-warning"><strong>Developer testing only</strong><p>The Demo Sign option is available only for local development testing. It is not Aadhaar authentication and must not be used for production agreements.</p></div>
- <button id="demoBtn" class="ghost fullbtn" onclick="demoSign()">Demo Sign (Local Test)</button>
+ <div class="security-note"><strong>🔒 Secure signing</strong><p>Your acceptance is recorded against this secure signing link. The consultant cannot sign until the client has accepted the agreement. The agreement becomes fully executed only after both parties have signed.</p></div>
 </section>
 </main>
-<script src="/sign.js"></script>
+<script src="/sign.js?v=accept1"></script>
 </body>
 </html>
