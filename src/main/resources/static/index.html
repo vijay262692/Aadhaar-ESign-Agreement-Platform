@@ -1,56 +1,32 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PV Talent Partners | Agreement Portal</title>
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Agreement & eSign Portal</small></div></div>
-  <div class="header-actions"><span class="pill">Consultant Portal</span><form method="post" action="/logout"><button class="ghost" type="submit">Logout</button></form></div>
-</header>
-
+<header class="topbar"><div class="brand"><span class="logo">PV</span><div><b>PV TALENT PARTNERS</b><small>Agreement & eSign Portal</small></div></div><div class="header-actions"><span class="pill">Consultant Portal</span><form method="post" action="/logout"><button class="ghost" type="submit">Logout</button></form></div></header>
 <main class="container">
-  <section class="hero">
-    <div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Candidate Placement Agreements</h1><p>Create an agreement, upload the final PDF, send it to the client, and track the two-party signing process.</p></div>
-    <button class="primary" onclick="openCreate()">+ New Agreement</button>
-  </section>
-
-  <section class="stats">
-    <div class="stat"><span>Total</span><strong id="total">0</strong></div>
-    <div class="stat"><span>Awaiting Client</span><strong id="awaiting">0</strong></div>
-    <div class="stat"><span>Awaiting Consultant</span><strong id="consultAwaiting">0</strong></div>
-    <div class="stat"><span>Fully Signed / Valid</span><strong id="complete">0</strong></div>
-  </section>
-
-  <section class="card">
-    <div class="section-head"><div><h2>Agreements</h2><p>Only agreements signed by both parties are marked valid.</p></div><button class="ghost" onclick="loadAgreements()">Refresh</button></div>
-    <div class="table-wrap"><table><thead><tr><th>Agreement</th><th>Client</th><th>Fee</th><th>Client</th><th>Consultant</th><th>Validity</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
-  </section>
+<section class="hero"><div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Candidate Placement Agreements</h1><p>Create the agreement from the approved PV Talent Partners template, send it to the client, and track the two-party signing process.</p></div><button class="primary" onclick="openCreate()">+ New Agreement</button></section>
+<section class="stats"><div class="stat"><span>Total</span><strong id="total">0</strong></div><div class="stat"><span>Awaiting Client</span><strong id="awaiting">0</strong></div><div class="stat"><span>Awaiting Consultant</span><strong id="consultAwaiting">0</strong></div><div class="stat"><span>Fully Signed / Valid</span><strong id="complete">0</strong></div></section>
+<section class="card"><div class="section-head"><div><h2>Agreements</h2><p>Only agreements signed by both parties are marked valid.</p></div><button class="ghost" onclick="loadAgreements()">Refresh</button></div><div class="table-wrap"><table><thead><tr><th>Agreement</th><th>Client</th><th>Fee</th><th>Client</th><th>Consultant</th><th>Validity</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 </main>
-
-<div id="modal" class="modal hidden">
- <div class="modal-card">
-  <div class="section-head"><div><h2>Create Agreement</h2><p>Upload the final agreement PDF first. The client will only be emailed after the PDF is successfully uploaded.</p></div><button class="close" onclick="closeCreate()">×</button></div>
-  <form id="createForm" class="grid">
-    <label>Client full name<input name="candidateFullName" required></label>
-    <label>Execution date<input name="executionDate" type="date" required></label>
-    <label class="full">Client address<textarea name="candidateAddress"></textarea></label>
-    <label>ID proof type<input name="candidateIdProofType" placeholder="Aadhaar / PAN / other"></label>
-    <label>ID proof reference<input name="candidateIdProofReference" placeholder="Provider reference preferred; avoid storing Aadhaar number"></label>
-    <label>Client email<input name="candidateEmail" type="email" required></label>
-    <label>Client mobile<input name="candidateMobile" required></label>
-    <label>Consultant email<input name="consultantEmail" type="email" placeholder="Email for consultant signing notification"></label>
-    <label>Total fee<input name="totalFeeAmount" placeholder="₹ 1,00,000" required></label>
-    <label>Pre-payment<input name="prePaymentAmount" placeholder="₹ 30,000" required></label>
-    <label>Balance amount<input name="balanceAmount" placeholder="₹ 70,000" required></label>
-    <label class="full">Final Agreement PDF<input id="agreementPdf" name="agreementPdf" type="file" accept="application/pdf,.pdf" required><small class="field-help">PDF is required so the client can download/view the exact document and review it before eSign. DOC/DOCX files must be converted to PDF first.</small></label>
-    <div class="full actions"><button type="button" class="ghost" onclick="closeCreate()">Cancel</button><button class="primary">Create, Upload & Email</button></div>
-  </form>
- </div>
-</div>
+<div id="modal" class="modal hidden"><div class="modal-card"><div class="section-head"><div><h2>Create Agreement</h2><p>The system will generate the final 3-page Candidate Placement Services Agreement from the approved template using the details below.</p></div><button class="close" onclick="closeCreate()">×</button></div>
+<form id="createForm" class="grid">
+<label>Client full name<input name="candidateFullName" required></label>
+<label>Execution date<input name="executionDate" type="date" required></label>
+<label class="full">Client address<textarea name="candidateAddress"></textarea></label>
+<label>ID proof type<input name="candidateIdProofType" placeholder="Optional"></label>
+<label>ID proof reference<input name="candidateIdProofReference" placeholder="Optional reference; avoid storing Aadhaar number"></label>
+<label>Client email<input name="candidateEmail" type="email" required></label>
+<label>Client mobile<input name="candidateMobile" required></label>
+<label>Consultant email<input name="consultantEmail" type="email" placeholder="Email for consultant signing notification"></label>
+<label>Total fee<input name="totalFeeAmount" placeholder="₹ 1,00,000" required></label>
+<label>Pre-payment<input name="prePaymentAmount" placeholder="₹ 30,000" required></label>
+<label>Balance amount<input name="balanceAmount" placeholder="₹ 70,000" required></label>
+<div class="full field-help"><strong>PDF generation:</strong> No upload is required. The portal generates the agreement PDF automatically from the approved PV Talent Partners agreement template.</div>
+<div class="full actions"><button type="button" class="ghost" onclick="closeCreate()">Cancel</button><button class="primary">Generate Agreement & Email Client</button></div>
+</form></div></div>
 <script src="/app.js"></script>
-</body>
-</html>
+</body></html>
