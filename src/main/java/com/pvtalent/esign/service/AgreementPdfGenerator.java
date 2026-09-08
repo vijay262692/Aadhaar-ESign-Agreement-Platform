@@ -19,7 +19,7 @@ import java.util.UUID;
 public class AgreementPdfGenerator {
     private static final float PAGE_W=PDRectangle.A4.getWidth(), PAGE_H=PDRectangle.A4.getHeight();
     private static final float LEFT=55.1f, BODY_LEFT=73.1f, RIGHT=539f, BODY_SIZE=11f, LEADING=15f;
-    private static final PDFont BODY=PDType1Font.TIMES, BOLD=PDType1Font.TIMES_BOLD;
+    private static final PDFont BODY=PDType1Font.HELVETICA, BOLD=PDType1Font.HELVETICA_BOLD;
 
     public String generate(Agreement a,String uploadDir)throws Exception{
         Path dir=Paths.get(uploadDir).toAbsolutePath().normalize();Files.createDirectories(dir);Path output=dir.resolve(UUID.randomUUID()+"-agreement.pdf");
@@ -79,5 +79,5 @@ public class AgreementPdfGenerator {
     private String safe(String v){return v==null||v.isBlank()?"[Not provided]":v.trim();}
     private String value(String v){return safe(v);}
     private String idText(Agreement a){String type=a.getCandidateIdProofType(),ref=a.getCandidateIdProofReference();if((type==null||type.isBlank())&&(ref==null||ref.isBlank()))return "the identity information provided";if(ref==null||ref.isBlank())return safe(type);return safe(type)+" "+ref;}
-    private String safePdf(String s){if(s==null)return "";return s.replace("\r"," ").replace("\n"," ").replace("₹","Rs.");}
+    private String safePdf(String s){if(s==null)return "";return s.replace("\r"," ").replace("\n"," ").replace("₹","Rs.").replace("•","-");}
 }
