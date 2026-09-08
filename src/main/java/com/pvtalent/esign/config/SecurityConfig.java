@@ -43,10 +43,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf().disable()
+            .headers(headers -> headers.frameOptions().sameOrigin())
             .authorizeRequests(auth -> auth
                 .antMatchers("/login.html", "/login.css", "/login.js", "/error").permitAll()
                 .antMatchers("/api/sign/**", "/api/esign/callback").permitAll()
-                .antMatchers("/api/agreements/*/esign/start", "/api/agreements/*/demo-sign").permitAll()
+                .antMatchers("/api/agreements/*/esign/start", "/api/agreements/*/demo-sign", "/api/agreements/*/accept").permitAll()
                 .antMatchers("/", "/index.html", "/app.js", "/styles.css", "/api/agreements/**").authenticated()
                 .anyRequest().permitAll()
             )
