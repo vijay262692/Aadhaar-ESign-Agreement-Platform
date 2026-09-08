@@ -5,6 +5,7 @@ import com.pvtalent.esign.dto.CreateAgreementRequest;
 import com.pvtalent.esign.dto.ESignStartRequest;
 import com.pvtalent.esign.model.*;
 import com.pvtalent.esign.repository.AgreementRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,8 @@ public class AgreementService {
     private final AgreementRepository repo;
     private final ESignService eSignService;
     private final EmailService emailService;
+
+    @Autowired private AgreementPdfSignatureService pdfSignatureService;
 
     @Value("${app.frontend-base-url:http://localhost:8080}") private String frontendBaseUrl;
     @Value("${app.upload-dir:./uploads}") private String uploadDir;
@@ -86,6 +89,7 @@ public class AgreementService {
         boolean fullySigned=a.isFullySigned();
         if(fullySigned){a.setStatus(AgreementStatus.FULLY_SIGNED);a.setCompletedAt(LocalDateTime.now());} else a.setStatus(AgreementStatus.AWAITING_CONSULTANT);
         Agreement saved=repo.save(a);
+        try { pdfSignatureService.appendSignatureRecord(saved, party); } catch (Exception ignored) { }
         if(party==Party.CANDIDATE && !fullySigned) emailService.sendConsultantInvitation(saved);
         if(fullySigned) emailService.sendFullyExecuted(saved);
         return saved;
