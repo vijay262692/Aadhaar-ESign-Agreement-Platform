@@ -10,5 +10,5 @@ public final class AgreementTemplateResource {
     }
 
     private static final String BASE64 =
-        "PLACEHOLDER";
+        "JVBERi0xLjQKJcOkw7zDtsO...";
 }
